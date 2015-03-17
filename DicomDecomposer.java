@@ -9,7 +9,7 @@ class DicomDecomposer{
 	static File targetfile = new File("/Users/takuya/Dropbox/program/workspace/DicomDecomposer/src/PinnalcePlan/RTPLAN16857.1.dcm");
 	//static File targetfile = new File("/Users/takuya/Documents/workspace/DicomDecomposer/src/PinnalcePlan/testfile3.dcm");
 	//static File targetfile = new File("c:/pic/RTPLAN16212.2.dcm");
-	
+	//test
 	static int flag = 0;
 	static long location = 0;
 	static int SQlocation = 0;
