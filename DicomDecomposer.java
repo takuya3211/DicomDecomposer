@@ -6,7 +6,7 @@ import java.util.Properties;
 
 class DicomDecomposer{
 	//static File targetDir = new File("c:/pic/");
-	static File targetfile = new File("/Users/takuya/Dropbox/program/workspace/DicomDecomposer/src/PinnalcePlan/RTPLAN16857.1.dcm");
+	static File targetfile = new File("/Users/takuya/Dropbox/program/workspace/DicomDecomposer/src/MonacoPlan/Cork6cmPhlps_StrctrSets.dcm");
 	//static File targetfile = new File("/Users/takuya/Documents/workspace/DicomDecomposer/src/PinnalcePlan/testfile3.dcm");
 	//static File targetfile = new File("c:/pic/RTPLAN16212.2.dcm");
 	//test
@@ -37,7 +37,7 @@ class DicomDecomposer{
     		//System.out.println(input.available());
     		System.out.println(targetfile.getParent());
     		//FileOutputStream output = new FileOutputStream(targetfile.getParent() + "/testfile.dat");
-    		FileWriter output = new FileWriter(targetfile.getParent() + "/outputfile.txt");
+    		FileWriter output = new FileWriter(targetfile.getParent() + "/outputfile.txt"); //解析結果を出力
     		int i = 0;
     		getPreamble(input);//プリアンブルの128バイト読み込む
     		DicomDictionary d = new  DicomDictionary();
