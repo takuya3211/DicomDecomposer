@@ -38,28 +38,33 @@ class DicomDecomposer{
     		System.out.println(targetfile.getParent());
     		//FileOutputStream output = new FileOutputStream(targetfile.getParent() + "/testfile.dat");
     		FileWriter output = new FileWriter(targetfile.getParent() + "/outputfile.txt"); //解析結果を出力
+    		FileWriter selectedOutput = new FileWriter(targetfile.getParent() + "/Contour.txt"); //ROI結果を出力
     		int i = 0;
-    		getPreamble(input);//プリアンブルの128バイト読み込む
+    		//getPreamble(input);//プリアンブルの128バイト読み込む
     		DicomDictionary d = new  DicomDictionary();
     		dictionary = d.getDictionary();
     		
-    		if(checkDicomFile(input)){//128バイト送った後がDICM文字か
+    		//if(checkDicomFile(input)){//128バイト送った後がDICM文字か
     			while (location < filesize){
 					getAll(input);
 					//System.out.print(groupArray.size());
 					//System.out.print("," + count + "\n");
 					count ++;
     			}
-    			printAllResults(output);
+    			printAllResults(output, selectedOutput);
     			
-    			putMLC();
-    			MLCMonaco();
+    			//putMLC(); //PinnacleのMLC情報をMonacoに変換するため
+    			//MLCMonaco();//PinnacleのMLC情報をMonacoに変換するため
     			//System.out.println(location);
+    			ContourAnalyze ca = new ContourAnalyze();
+    			ca.analyzeIt();
     			System.out.println("Finished!!");
 	    		output.flush();
 	    		output.close();
+	    		selectedOutput.flush();
+	    		selectedOutput.close();
 	    		input.close();
-    		}
+    		//}
     	}
     	catch(IOException e) {
             System.out.println(e);
@@ -123,6 +128,7 @@ class DicomDecomposer{
     	}
     }
     
+
     public static void printAllResults(FileWriter output){
     	int i = 0;
     	String tempString = "";
@@ -150,10 +156,66 @@ class DicomDecomposer{
     		}
     		//System.out.println(tempString);
     		try {
-				output.write(tempString + "\n");
+    			output.write(tempString + "\n");
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+    	}
+    }
+    
+    public static void printAllResults(FileWriter output, FileWriter selectedOutput){
+    	int i = 0;
+    	String tempString = "";
+    	String tempString2 = "";
+    	ArrayList<String> roiNameList = new ArrayList<String>();
+    	ArrayList<String> roiNumberList = new ArrayList<String>();
+    	String avtiveROIName = "", activeROINumber = "";
+    	for(i = 0; i < count ; i ++) {
+    		if (!VRArray.get(i).equals("SQ")) {//VRがSQ以外の時の処理
+    			tempString = 
+    					"(" + 
+    					bytetoHexString(groupArray.get(i)) + "," + 
+    					bytetoHexString(elementArray.get(i)) + ")" +
+    					" " + VRArray.get(i) + " " +
+    					" [" + dictionary.get(bytetoHexString(groupArray.get(i)) + bytetoHexString(elementArray.get(i))).toString().substring(2) +  "] " +
+    					  
+    					new String(dataArray.get(i));
+    			tempString2 = new String(dataArray.get(i));
+    			
+    		} else {//SQだった場合
+    			tempString = 
+    					"(" + 
+    					bytetoHexString(groupArray.get(i)) + "," + 
+    					bytetoHexString(elementArray.get(i)) + ")" +
+    					" " + VRArray.get(i) + " " +
+    					" [" + dictionary.get(bytetoHexString(groupArray.get(i)) + bytetoHexString(elementArray.get(i))).toString().substring(2) +  "] " +
+    					"Here is SQ segment!!!!!" //+ 
+    					//bytetoHexString(dataArray.get(i)
+    					;
+    		}
+    		//System.out.println(tempString);
+    		try {
+    			if (bytetoHexString(groupArray.get(i)).equals("3006") && bytetoHexString(elementArray.get(i)).equals("0050") ){
+    				//Contour Data
+    				selectedOutput.write(tempString2 + "\n");
+    			}
+    			else if (bytetoHexString(groupArray.get(i)).equals("3006") && bytetoHexString(elementArray.get(i)).equals("0022") ){
+    				//ROI Number　とりあえずString型のまま格納 数字の後に０データがあってparseInt出来ない
+    				selectedOutput.write(tempString2 + "\n");
+    				roiNumberList.add(tempString2);
+    			}
+    			else if (bytetoHexString(groupArray.get(i)).equals("3006") && bytetoHexString(elementArray.get(i)).equals("0026") ){
+    				//ROI NAME
+    				selectedOutput.write(tempString2 + "\n");
+    				roiNameList.add(tempString2);
+    			}
+    			output.write(tempString + "\n");
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+    	}
+    	for (i = 0; i < roiNumberList.size(); i ++){
+    		System.out.println(roiNumberList.get(i) + " " + roiNameList.get(i));
     	}
     }
     
@@ -429,6 +491,7 @@ case ST: case TM:case UI: case UL: case US: case QQ:*/
 		return returnByte;
 	}
 	
+
 
     public static FilenameFilter getFileExtensionFilter(String extension) {  //listtargetDirで使うメソッド
         final String _extension = extension;  
