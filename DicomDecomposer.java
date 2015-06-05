@@ -6,9 +6,10 @@ import java.util.Properties;
 
 class DicomDecomposer{
 	//static File targetDir = new File("c:/pic/");
-	static File targetfile = new File("/Users/takuya/Dropbox/program/workspace/DicomDecomposer/src/MonacoPlan/Cork6cmPhlps_StrctrSets.dcm");
-	//static File targetfile = new File("/Users/takuya/Documents/workspace/DicomDecomposer/src/PinnalcePlan/testfile3.dcm");
-	//static File targetfile = new File("c:/pic/RTPLAN16212.2.dcm");
+	static File targetFile = new File("/Users/takuya/Dropbox/program/workspace/DicomDecomposer/src/MonacoPlan/Cork6cmPhlps_StrctrSets.dcm");
+	static String targetPath = targetFile.getParent() + "/";
+	//static File targetFile = new File("/Users/takuya/Documents/workspace/DicomDecomposer/src/PinnalcePlan/testfile3.dcm");
+	//static File targetFile = new File("c:/pic/RTPLAN16212.2.dcm");
 	//test
 	static int flag = 0;
 	static long location = 0;
@@ -30,15 +31,18 @@ class DicomDecomposer{
 	static List<String> MLCMonacoArray = new ArrayList<String>();
 	private static Properties dictionary;
 	
+	static ArrayList<String> roiNameList = new ArrayList<String>();
+	static ArrayList<String> roiNumberList = new ArrayList<String>();
+	
     public static void main(String[] args) {
     	try{
-    		FileInputStream input = new FileInputStream(targetfile);
+    		FileInputStream input = new FileInputStream(targetFile);
     		long filesize = input.available();
     		//System.out.println(input.available());
-    		System.out.println(targetfile.getParent());
-    		//FileOutputStream output = new FileOutputStream(targetfile.getParent() + "/testfile.dat");
-    		FileWriter output = new FileWriter(targetfile.getParent() + "/outputfile.txt"); //解析結果を出力
-    		FileWriter selectedOutput = new FileWriter(targetfile.getParent() + "/Contour.txt"); //ROI結果を出力
+    		System.out.println(targetFile.getParent());
+    		//FileOutputStream output = new FileOutputStream(targetFile.getParent() + "/testfile.dat");
+    		FileWriter output = new FileWriter(targetFile.getParent() + "/outputfile.txt"); //解析結果を出力
+    		FileWriter selectedOutput = new FileWriter(targetFile.getParent() + "/Contour.txt"); //ROI結果を出力
     		int i = 0;
     		//getPreamble(input);//プリアンブルの128バイト読み込む
     		DicomDictionary d = new  DicomDictionary();
@@ -53,17 +57,18 @@ class DicomDecomposer{
     			}
     			printAllResults(output, selectedOutput);
     			
+				
     			//putMLC(); //PinnacleのMLC情報をMonacoに変換するため
     			//MLCMonaco();//PinnacleのMLC情報をMonacoに変換するため
     			//System.out.println(location);
-    			ContourAnalyze ca = new ContourAnalyze();
-    			ca.analyzeIt();
     			System.out.println("Finished!!");
 	    		output.flush();
 	    		output.close();
 	    		selectedOutput.flush();
 	    		selectedOutput.close();
 	    		input.close();
+	    		
+
     		//}
     	}
     	catch(IOException e) {
@@ -165,10 +170,9 @@ class DicomDecomposer{
     
     public static void printAllResults(FileWriter output, FileWriter selectedOutput){
     	int i = 0;
+    	int roiCount = 0;
     	String tempString = "";
     	String tempString2 = "";
-    	ArrayList<String> roiNameList = new ArrayList<String>();
-    	ArrayList<String> roiNumberList = new ArrayList<String>();
     	String avtiveROIName = "", activeROINumber = "";
     	for(i = 0; i < count ; i ++) {
     		if (!VRArray.get(i).equals("SQ")) {//VRがSQ以外の時の処理
@@ -197,7 +201,18 @@ class DicomDecomposer{
     		try {
     			if (bytetoHexString(groupArray.get(i)).equals("3006") && bytetoHexString(elementArray.get(i)).equals("0050") ){
     				//Contour Data
-    				selectedOutput.write(tempString2 + "\n");
+    				//selectedOutput.write(tempString2 + "\n");
+    				ContourAnalyze ca = new ContourAnalyze();
+    				String [] tempStringArray = ca.getString(ca.analyzeIt(tempString2));
+    				int tempStringCount = 0;
+    				for (tempStringCount = 0; tempStringCount < tempStringArray.length; tempStringCount++){
+    					selectedOutput.write(tempStringArray[tempStringCount] + "\n");
+    				}
+    				selectedOutput.write("\n");
+    				
+    				//ca.printAll(ca.getString(ca.analyzeIt(tempString2)));
+    				//System.out.println("-----------------------");
+
     			}
     			else if (bytetoHexString(groupArray.get(i)).equals("3006") && bytetoHexString(elementArray.get(i)).equals("0022") ){
     				//ROI Number　とりあえずString型のまま格納 数字の後に０データがあってparseInt出来ない
@@ -208,6 +223,11 @@ class DicomDecomposer{
     				//ROI NAME
     				selectedOutput.write(tempString2 + "\n");
     				roiNameList.add(tempString2);
+    			}
+    			else if (bytetoHexString(groupArray.get(i)).equals("3006") && bytetoHexString(elementArray.get(i)).equals("0084") ){
+    				//Referenced ROI Number
+    				selectedOutput.write(tempString2 + "End of ROI\n");
+    				//roiNumberList.add(tempString2);
     			}
     			output.write(tempString + "\n");
 			} catch (IOException e) {
